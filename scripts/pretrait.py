@@ -1,7 +1,7 @@
 from glob import glob
 import os
 from Evaluation import Evaluation
-from KrisSophCam.Predict import Predict
+from Predict import Predict
 predicted = []
 expected = []
 
