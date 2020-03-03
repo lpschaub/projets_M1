@@ -1,5 +1,7 @@
 from glob import glob
 import os
+# from scripts.Evaluation import Evaluation
+# from scripts.Predict import Predict
 from Evaluation import Evaluation
 from Predict import Predict
 predicted = []
@@ -40,17 +42,17 @@ def prediction(file,expect) :
 if __name__ == '__main__':
 
 
-    for fic in glob('../corpus/imdb_test/*/*.txt') :
-        print(fic)
+    for fic in glob('/home/schaub/Téléchargements/aclImdb_v1/aclImdb/imdb/eval/**/*.txt') :
+        # print(fic)
         file, label = getcontentlabel(fic)
-        #print(file)
-        #print("attendu :"+label)
+        # print(file)
+        # print(label)
 
         prediction(file,label)
 
 
-    #print(predicted)
-    #print(expected)
+    print(len(predicted))
+    print(len(expected))
 
     eval = Evaluation(expected,predicted)
 
