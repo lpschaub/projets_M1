@@ -8,23 +8,23 @@ class Evaluation(object) :
         self.__vrais_positifs = 0
         self.__faux_positifs = 0
         self.__faux_negatifs = 0
-        self.values = ('neg','pos')
+        self.values = ('pos','neg')
 
         if len(reference) != len(predit) :
             raise AttributeError("Il y'a un pb dans vos données")
 
         for i in range(len(reference)):
-            if reference[i] == predit[i]  ==  self.values[0] :
+            if reference[i] == predit[i] :
                 self.__vrais_positifs += 1
             else :
-                if reference[i] == self.values[0] :
-                    self.__faux_positifs += 1
-                else :
+                if reference[i] == self.values[0] and predit[i] == self.values[1]:
                     self.__faux_negatifs += 1
+                elif  reference[i] == self.values[1] and predit[i] == self.values[0]:
+                    self.__faux_positifs += 1
 
     def precision(self):
 
-        return self.__vrais_positifs/(self.__vrais_positifs+self.__faux_positifs)
+        return self.__vrais_positifs/(self.__vrais_positifs + self.__faux_positifs)
 
     def rappel(self):
 

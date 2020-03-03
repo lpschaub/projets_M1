@@ -6,32 +6,33 @@ predicted = []
 expected = []
 
 
-def getFile(fic,pol): 
+def getFile(fic,pol):
     x = 0
-    for f in glob(fic+'/*') : 
+    for f in glob(fic+'/*') :
         x += 1
         os.system(f'mv {f} {pol}/')
-        if x == 500 : 
+        if x == 500 :
 
             break
 
 
 def getcontentlabel(file) :
-    
-    expect = '' 
-    if 'pos' in file : 
+
+    expect = ''
+    if 'pos' in file :
         expect = 'pos'
-    else : 
+    else :
         expect = 'neg'
 
     return open(file).read(),expect
 
 
-def prediction(file,expect) : 
+def prediction(file,expect) :
 
 
     pred = Predict(file)
     pred.predict()
+    #print("prediction :" + pred.predicted)
     predicted.append(pred.predicted)
     expected.append(expect)
 
@@ -39,21 +40,21 @@ def prediction(file,expect) :
 if __name__ == '__main__':
 
 
-    for fic in glob('../corpus/imdb/*/*.txt') : 
+    for fic in glob('../corpus/imdb_test/*/*.txt') :
         print(fic)
         file, label = getcontentlabel(fic)
-        print(file)
-        print(label)
+        #print(file)
+        #print("attendu :"+label)
 
         prediction(file,label)
 
 
-    print(predicted)
-    print(expected)
+    #print(predicted)
+    #print(expected)
 
     eval = Evaluation(expected,predicted)
 
-    
+
     print(eval.getVraisPos())
     print(eval.getFauxNeg())
     print(eval.getFauxPos())
