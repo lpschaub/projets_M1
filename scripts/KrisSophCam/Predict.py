@@ -1,3 +1,5 @@
+#Script 1 Kristina Sophie Camille
+
 import re
 import spacy
 nlp=spacy.load('en_core_web_sm')
