@@ -1,4 +1,4 @@
-#Script 1 Kristina Sophie Camille
+#Script 1 Kristina Sophie Camill
 
 import re
 import spacy
