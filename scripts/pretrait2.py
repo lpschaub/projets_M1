@@ -79,4 +79,4 @@ def prediction(file,expect) :
 
 if __name__ == '__main__':
 
-    pass
+    print("ca marche ! bravo")
