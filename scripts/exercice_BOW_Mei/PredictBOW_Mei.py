@@ -170,7 +170,5 @@ class Corpus(object) :
 if __name__ == '__main__':
     
     c = Corpus('../corpus/imdb/neg')
-    #res = c.voc
-    #print(res)
     c.getBOW('../corpus/imdb/pos/10628_7.txt')
     print(c.bow)
