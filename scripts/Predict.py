@@ -15,7 +15,7 @@ class Voc(object) :
 
 	def build_voc(self) : 
 		for fic in self.corpus.lire() : 
-			print(fic)
+			# print(fic)
 			ficstring = self.clean(self.corpus.string(fic).replace('\n',' '))
 			for elem in ficstring.split() : 
 				if elem != "" : 
@@ -36,7 +36,20 @@ class Voc(object) :
 
 	def load_voc(self, vocfile) : 
 
-		self.voc = Voc.string(vocfile)
+		self.voc = vocfile
+
+class VocCSV(Voc) :
+
+	def __init__(self, corpus) :
+		Voc.__init__(self, corpus)
+	
+	def build_voc(self): 
+
+		for lines in self.corpus : 
+			for elem in lines.split() : 
+				self.voc.append(elem)
+		self.voc = list(set(self.voc))
+		# print(self.voc)
 
 
 class Corpus(object) : 
@@ -45,9 +58,9 @@ class Corpus(object) :
 
 		self.corpus = path
 		if voc : 
-			self.voc = Voc.load_voc(voc)
+			self.voc = voc
 		else : 
-			voc = Voc(self)
+			voc = Voc(self, self.corpus)
 			voc.build_voc()
 			self.voc = voc.voc
 		self.bow = []
@@ -74,13 +87,28 @@ class Corpus(object) :
 					self.bow[x].append(1)  
 				else : 
 					self.bow[x].append(0)
-
+			print("done")
 
 			x += 1
 
-		print(self.bow)
+		# print(self.bow)
 
+class CorpusCSV(Corpus) : 
 
+	def __init__(self, path, voc = "") : 
+		self.corpus = path
+		if voc : 
+			self.voc = voc
+		else : 
+			voc = VocCSV(path)
+			voc.build_voc()
+			self.voc = voc.voc
+		self.bow = []
+	def string(self, fic) : 
+		return self.corpus
+
+	def lire(self): 
+		return self.corpus
 
 class Predict(object) : 
 
