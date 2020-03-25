@@ -2,6 +2,7 @@ from glob import glob
 
 import re
 import nltk
+import math
 from nltk.util import bigrams
 from nltk.util import trigrams
 import spacy
@@ -66,10 +67,15 @@ class Corpus(object) :
 			voc.build_voc()
 			self.voc = voc.voc
 		self.bow = []
+		self.tdidf = []
 
 	def lire (self) :
 		return glob(self.corpus+"/*")
 
+	def clean(self,ficstring) :
+		ficstring = re.sub('(<[^>]*>)|\(|\)',' ',ficstring)
+		ficstring = re.sub(' {2,}',' ',ficstring)
+		return ficstring
 
 	def string(self,fic) :
 
@@ -87,6 +93,21 @@ class Corpus(object) :
 					ligne.append(0)
 			self.bow.append(ligne)
 
+	def getTFIDF(self) :
+		for fic in self.lire() :
+			texte= [str(item) for item in nlp(self.clean(self.string(fic))) if not item.is_space and not item.is_punct]
+			ligne=[]
+			for mot in self.voc:
+				tf=texte.count(mot)/len(texte)
+				regexp=re.compile(r'\b'+re.escape(mot)+r'\b')
+				idf_part2=len([True for com in self.lire() if regexp.search(com)])#ex probleme avant lemmatisation : n't interprété comme mot à part par spacy mais du coup pas reconnu par notre regexp, donc ligne suivante pour régler le pb en attendant --> divison par 0 impossible, donc en attendant :
+				if idf_part2==0:
+					idf_part2=len([True for com in self.lire() if mot in com])
+				idf=math.log2(len(self.lire())/idf_part2)
+				ligne.append(tf*idf)
+
+			self.tfidf.append(ligne)
+
 		# print(self.bow)
 
 class CorpusCSV(Corpus) :
@@ -102,6 +123,7 @@ class CorpusCSV(Corpus) :
 			self.bigram=voc.bigram
 			self.trigram=voc.trigram
 		self.bow = []
+		self.tfidf = []
 	def string(self, fic) :
 		return fic
 

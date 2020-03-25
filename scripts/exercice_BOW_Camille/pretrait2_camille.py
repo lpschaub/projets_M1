@@ -101,5 +101,7 @@ if __name__ == '__main__':
     print(corpus.bow)
     print(corpus.bigram)
     print(corpus.trigram)
+    corpus.getTFIDF()
+    print(corpus.tfidf)
 
     print("ca marche ! bravo")
