@@ -6,6 +6,7 @@ import re
 import spacy
 from spacy import displacy
 nlp = spacy.load('en_core_web_sm')
+import nltk
 
 class Voc(object) :
 
@@ -155,6 +156,6 @@ class Corpus(object) :
 if __name__ == '__main__':
 
 	c = Corpus('../../corpus/imdb/neg')
-	print(c.voc)
+	#print(c.voc)
 	c.getBOW()
-	print(c.bow)
+	#print(c.bow)
