@@ -25,7 +25,49 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn import model_selection, naive_bayes, svm
 from sklearn.metrics import accuracy_score, classification_report
 
+import re
 
+def pipeline(file) : 
+
+    Corpus = pd.read_csv(file, sep='\t')
+    corpus = Corpus.reindex(np.random.permutation(Corpus.index))
+    # print(corpus.head())
+    # # Step - a : Remove blank rows if any.
+    # print(corpus['text'])
+    # print(corpus['label'])
+
+    corpus['text'].dropna(inplace=True)# Step - b : Change all the text to lower case. This is required as python interprets 'dog' and 'DOG' differently
+    
+    # print(type(Corpus['text']))
+    # for elem in Corpus['text'] : 
+    #     print(elem)
+    #     print(type(elem))
+    #     break
+    corpus['text'] = [entry.lower() for entry in corpus['text']]
+    Train_X, Test_X, Train_Y, Test_Y = model_selection.train_test_split(corpus['text'],corpus['label'],test_size=0.2)
+    # print(len(Train_X))
+    # print(len(Train_Y))
+
+    Encoder = LabelEncoder()
+    Train_Y = Encoder.fit_transform(Train_Y)
+    print(Train_Y)
+
+    # Test_Y = Encoder.fit_transform(Test_Y)
+    # print(Test_Y)
+    # sys.exit()
+
+
+    representation = CorpusCSV(corpus['text'])
+    voc = representation.voc
+    
+# def cleanlines(line):  #remplacer tous les ponctuations et tous les chiffres par une espace
+#         p1=re.compile(r'[(][: @ . , ？！\s][)]')
+#         p2=re.compile(r'[「『]')
+#         p3=re.compile(r'[\s+\.\!\/_,$%^*(+\"\')]+|[+——()?【】“”！，。？、~@#￥%……&*（）0-9 , : ; \ \[\ \]\ ]')
+#         line=p1.sub(r' ',line)
+#         line=p2.sub(r' ',line)
+#         line=p3.sub(r' ',line)
+#         return line
 
 def files2csv(text,out,label):
     
@@ -44,9 +86,12 @@ def files2csv(text,out,label):
        for fic in glob(text):
            ficstring = open(fic).read()
            chaine = ficstring.replace('\n',' ')
+           chaine = ficstring.replace('\t',' ')
+           chaine = re.sub(r'<[^>]+>', '', chaine) 
+           chaine = re.sub(r'[\(\[,\.\?!\*\]\)"\'/0-9]',' ',chaine)
+           chaine = re.sub(r' +',' ',chaine)
+           chaine = chaine.lower()
            f.write(f'{chaine}\t{label}\n')
-
-
 
 
 def getFile(fic,pol): 
@@ -81,7 +126,12 @@ def prediction(file,expect) :
 
 
 if __name__ == '__main__':
-
+    
+    f = open('out.csv','w')
+    f.write(f"text\tlabel\n")
+    f.close()
     files2csv('../corpus/imdb/neg/*','out.csv','NEG')
     files2csv('../corpus/imdb/pos/*','out.csv','POS')
+    
+    # pipeline('out.csv')
     print("ca marche ! bravo")
