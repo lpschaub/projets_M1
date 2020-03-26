@@ -25,8 +25,19 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn import model_selection, naive_bayes, svm
 from sklearn.metrics import accuracy_score, classification_report
 
-
-
+def pipeline(file):
+	corpus = pd.read_csv(file, sep='\t')
+	corpus = corpus.reindex(np.random.permutation(corpus.index))
+#	print(corpus['text'])
+#	print(corpus['label'])
+	corpus['text']=[elem.lower() for elem in corpus['text']]
+	Train_X, Test_X, Train_Y, Test_Y = model_selection.train_test_split(corpus['text'],corpus['label'],test_size=0.2)
+	Encoder = LabelEncoder()
+	Train_Y = Encoder.fit_transform(Train_Y)
+	Test_Y = Encoder.fit_transform(Test_Y)
+	print(Train_Y)
+	print(Test_Y)
+	
 def files2csv(text,out,label):
     """
     à vous de compléter -> 
@@ -88,7 +99,11 @@ def clean(ficstring) :
 
 
 if __name__ == '__main__':
-
-    for fic in glob("../../corpus/imdb/**/*.txt"):
-        label = getcontentlabel(fic)
-        files2csv(label[0], "./fichiercsv.tsv", label[1])
+	out = "./fichiercsv.tsv"
+	with open(out, 'a') as f:
+		f.write(f"text\tlabel\n")
+	f.close()
+	for fic in glob("../../corpus/imdb/**/*.txt"):
+		label = getcontentlabel(fic)
+		files2csv(label[0], out, label[1])
+	pipeline(out)
