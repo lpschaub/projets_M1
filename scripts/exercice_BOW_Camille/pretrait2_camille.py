@@ -4,7 +4,7 @@ from glob import glob
 import os
 import random
 # from scripts.Evaluation import Evaluation
-from PredictBOW_cam_V2 import *
+from PredictBOW_cam_V3 import *
 #from Evaluation import Evaluation
 import spacy
 predicted = []
@@ -101,7 +101,10 @@ if __name__ == '__main__':
     print(corpus.bow)
     print(corpus.bigram)
     print(corpus.trigram)
-    corpus.getTFIDF()
-    print(corpus.tfidf)
-
+    corpus.getTFIDF_voc()
+    print(corpus.tfidf_voc)
+    corpus.getTFIDF_bigram()
+    print(corpus.tfidf_bigram)
+    corpus.getTFIDF_trigram()
+    print(corpus.tfidf_trigram)
     print("ca marche ! bravo")
