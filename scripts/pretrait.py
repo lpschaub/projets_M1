@@ -1,12 +1,12 @@
 from glob import glob
-import os
+import os, sys, time
 # from scripts.Evaluation import Evaluation
 from Predict import *
 from Evaluation import Evaluation
 import spacy
 predicted = []
 expected = []
-
+import collections
 nlp=spacy.load('en_core_web_sm')
 # from Predict import Predict
 
@@ -25,150 +25,272 @@ from sklearn import model_selection, naive_bayes, svm
 from sklearn.metrics import accuracy_score, classification_report
 
 
-def pipeline(file) : 
+def normal(elem) : 
+    return elem.split()
+
+def tokens(elem) :
+    return ' '.join([token.text for token in nlp(elem)if token.text != ''] )
+
+def lemmas(elem) : 
+    return ' '.join([token.lemma_ for token in nlp(elem)if token.text != ''] )   
+
+def swds(elem) :
+    return ' '.join([token.text for token in nlp(elem) if not token.is_stop and token.text != '' ])
+
+def swdslemma(elem) : 
+    return ' '.join([token.lemma_ for token in nlp(elem) if not token.is_stop and token.text != '' ])
+
+def clean(elem) : 
+
+    elem = elem.replace('"','')
+    elem = elem.replace('(','')
+    elem = elem.replace(')','')
+    elem = elem.replace('[','')
+    elem = elem.replace(']','')
+    elem = elem.replace('  ',' ')
+    elem = elem.replace('\t',' ')
+    elem = elem.replace('<','')
+    elem = elem.replace('>','')
+    elem = elem.replace("'s",' is')
+    elem = elem.replace('-','')
+    elem = elem.replace('/br','')
+    elem = elem.replace('?','')
+    elem = elem.replace(':','')
+    elem = elem.replace('...','')
+    elem = elem.replace('!','')
+    elem = elem.replace('/','')
+    elem = elem.replace('\\','')
+    elem = elem.replace('>','')
+    elem = elem.replace(';',' ')
+    elem = elem.replace('/>','')
+    
+
+    return ' '.join([word for word in elem.split() if word != ''])
+
+def maxmin_df(corpus, mindf = 0.05, maxdf = 0.95) :
+
+    """
+    On max min dfise, ce sont des paramètres que vous pouvez changer dans l'appel de la fonction dans pipeline()
+    """ 
+
+    N = len(corpus)
+    voc = {}
+    final = []
+    for elem in corpus : 
+        elem = list(set(elem))
+        for word in elem :
+            if word not in voc : 
+                voc[word] = 1
+            else :
+                voc[word] += 1
+    for mot in voc : 
+        if voc[mot]/N > mindf and voc[mot]/N < maxdf and mot != '' : 
+            final.append(mot)
+
+    new_corpus = []
+    for elem in corpus : 
+         new_corpus.append([token for token  in elem if token in final])
+    return final, new_corpus
+
+
+def voca(corpus) : 
+
+    voc = []
+
+    for elem in corpus : 
+        for token in elem :
+            if token != '' : 
+                voc.append(token)
+            else : 
+                print(token)
+    return len(list(set(voc)))
+
+
+
+def simple_bow(corpus, voc) :
+
+    bow = []
+    i = 0
+    for elem in corpus : 
+        bow.append([])
+        for word in voc : 
+            if word in elem : 
+                bow[i].append(1)
+            else : 
+                bow[i].append(0)
+        i += 1
+    return bow
+
+def frequency_bow(corpus, voc) : 
+    bow = []
+    i = 0
+
+    for elem in corpus : 
+        elem = collections.Counter(elem)
+        bow.append([])
+        for word in voc : 
+            if word in elem : 
+                bow[i].append(elem[word])
+            else : 
+                bow[i].append(0)
+        i += 1
+    # sys.exit()
+    return bow
+
+
+from nltk import ngrams
+
+
+def n_grammeur(corpus, n_grammes) : 
+    """
+    On transforme le corpus en n-grammes (on généralise et on passe le n-grammes en paramètres de la fonction)
+    """
+    new_corpus = []
+
+    for elem in corpus : 
+        new_elem = ''
+        elem = elem.split()
+        new_corpus.append([grams for grams in ngrams(elem, n_grammes)])
+    return new_corpus
+
+
+
+# def frequency_bow(corpus, voc) :
+
+
+
+def pipeline(file, n_grammes = 2) : 
+
+    """
+        Par défaut, on veut des bigrammes. 
+        VOus choisissez ici quel prétraitement effectuer (lower case, lemmatisation stopwords.. etc vous êtes libres d'en rajouter)
+    """
 
     Corpus = pd.read_csv(file, sep='\t')
-    corpus = Corpus.reindex(np.random.permutation(Corpus.index))
-    print(corpus.head())
     # Step - a : Remove blank rows if any.
-    print(corpus['text'])
-    print(corpus['label'])
+    # has_voc = False
 
+
+
+    print("########################################################\n\n")
+
+    print('Pré-taitement du corpus \n\n')
     Corpus['text'].dropna(inplace=True)# Step - b : Change all the text to lower case. This is required as python interprets 'dog' and 'DOG' differently
-    
-    print(type(Corpus['text']))
-    for elem in Corpus['text'] : 
-        print(elem)
-        print(type(elem))
-        break
 
     Corpus['text'] = [entry.lower() for entry in Corpus['text']]# Step - c : Tokenization : In this each entry in the corpus will be broken into set of words
+    print('Taille du corpus avant nettoiement : ' +str(sum([len(elem.split()) for elem in Corpus['text']]))+'\n\n')
+    # Corpus['text'] = [swds(elem) for elem in Corpus['text']]   # On stopwordise en tokens (si vous ne voulez pas, il faut commenter cette ligne)
+
+    Corpus['text'] = [clean(elem) for elem in Corpus['text']]
+    print('Taille du corpus avant prétraitement : ' +str(sum([len(elem.split()) for elem in Corpus['text']]))+'\n\n')
+    # Corpus['text'] = [swds(elem) for elem in Corpus['text']]   # On stopwordise en tokens (si vous ne voulez pas, il faut commenter cette ligne)
+
+    Corpus['text'] = [swdslemma(elem) for elem in Corpus['text']]   # On stopwordise en lemmes (si vous ne voulez pas, il faut commenter cette ligne)
+
+    # Corpus['text'] = [lemmas(elem) for elem in Corpus['text']]   # On lemmatise sans stopwordiser (si vous ne voulez pas, il faut commenter cette ligne)
+
+    print("########################################################\n\n")
+    new = []
+    # On nettoie ici le corpus une dernière fois pour virer les char qui se balladent et qui faussent les résultats
+    for elem in Corpus['text'] : 
+        new_el= []
+        for word in elem.split(): 
+            if len(word) > 1 : 
+                new_el.append(word)
+        new.append(' '.join(new_el))
+    Corpus['text'] = new
+
+    print('Taille du corpus après  prétraitement : '+str(sum([len(elem.split()) for elem in Corpus['text']]))+'\n\n')
+    print("########################################################\n\n")
+    print('Ngrammisation du corpus \n\n')
+    # sys.exit()
+
+    Corpus['text'] = n_grammeur(Corpus['text'], n_grammes)
+    # print(f'Taille du corpus après n_grammisation de {n_grammes}-grammes : {sum([len(elem.split()) for elem in Corpus['text']])}')
     
 
-    Train_X, Test_X, Train_Y, Test_Y = model_selection.train_test_split(Corpus['text'],Corpus['label'],test_size=0.2)
-    print(len(Train_X))
-    print(len(Train_Y))
+    print("########################################################\n\n")
+    
+
+    print('Séparation en train (ce qui nous sert à apprendre le modèle + générer le vocabulaire) et test du corpus (on transforme le test en fontion du train)\n\n')  
+
+
+    Train_X, Test_X, Train_Y, Test_Y = model_selection.train_test_split(Corpus['text'],Corpus['label'],test_size=0.25)
+    
 
     Encoder = LabelEncoder()
-    Train_Y = Encoder.fit_transform(Train_Y)
-    print(Train_Y)
+    Train_Y = Encoder.fit_transform(Train_Y) # tranforme les 'neg' et 'pos' en 0 et 1
+    # print(Train_Y)
 
-    Test_Y = Encoder.fit_transform(Test_Y)
-    print(Test_Y)
-    sys.exit()
+    Test_Y = Encoder.fit_transform(Test_Y) #
+    # print(Test_Y)
+
+    print("########################################################\n\n")
+    
+
+    print('Génération du vocabulaire en fonction du train\n\n')
 
 
-    representation = CorpusCSV(Corpus['text'])
-    voc = representation.voc
-    Train_X = CorpusCSV(Train_X, voc)
-    Test_X = CorpusCSV(Test_X, voc)
-    Train_X.getBOW()
-    Test_X.getBOW()
-    Train_X_Tfidf = Train_X.bow
-    Test_X_Tfidf = Test_X.bow
-    print(Train_Y)
-    # Tfidf_vect = TfidfVectorizer(max_features=5000)
-    # Tfidf_vect.fit(Corpus['text'])
-    # Train_X_Tfidf = 
-    # Test_X_Tfidf = Tfidf_vect.transform(Test_X)
-    # print(Tfidf_vect.vocabulary_)
+    print(f'Taille du vocabulaire avant minmaxdf : {voca(Train_X)}')
+    vocab, Train_X = maxmin_df(Train_X, 0.05, 1)  # On max-min df-ise le corpus + on génère le vocabulaire sous-jacent. Si on veut désactiver, on met en paramtres min_df = 0 max df = 1
+    print(f'Taille du vocabulaire après minmaxdf : {len(vocab)} min = 0.05 max = 1')
+    # print(vocab)
+    # bow = simple_bow(Corpus['text'], vocab) # dans le cas de bow basés sur présence/ absence (mettez une des deux en commentaires )
+    
+    print("########################################################\n\n")
+    
+    time.sleep(2)
+    print('Tranformation du train et du test en bow en fonction du train\n\n')
 
-    # fit the training dataset on the NB classifier
+
+    bow_Trains = simple_bow(Train_X, vocab) #dans le cas de bow basés sur fréquence (mettez une des deux en commentaires )
+
+    bow_Tests = simple_bow(Test_X, vocab)
+    time.sleep(3)
+    # print(f"premier doc train bowisé simplement = {bow_Trains[0]}")
+    print(f"premier doc test bowisé simplement = {bow_Tests[0]}")
+    bow_Trainf = frequency_bow(Train_X, vocab) #dans le cas de bow basés sur fréquence (mettez une des deux en commentaires )
+
+    bow_Testf = frequency_bow(Test_X, vocab)
+    # print(f"premier doc train bowisé fréquence = {bow_Trainf[0]}")
+    print(f"premier doc test bowisé fréquence = {bow_Testf[0]}")
+
+    time.sleep(3)
+    print("########################################################\n\n")
+
+    print("Chargement de l'algorithme")
+   
     Naive = naive_bayes.MultinomialNB()
-    Naive.fit(Train_X_Tfidf,Train_Y)# predict the labels on validation dataset
-    predictions_NB = Naive.predict(Test_X_Tfidf)# Use accuracy_score function to get the accuracy
+    print(Naive)
+
+    print("########################################################\n\n")
+
+    print("Chargement de bow simple")
+    time.sleep(3)
+    Naive.fit(bow_Trains,Train_Y)# predict the labels on validation dataset
+    predictions_NB = Naive.predict(bow_Tests)# Use accuracy_score function to get the accuracy
     # print(predictions_NB)
     print("Naive Bayes Accuracy Score -> ",accuracy_score(predictions_NB, Test_Y)*100)
 
     print(classification_report(Test_Y,predictions_NB, labels=[0,1], target_names=['neg','pos']))
-    SVM = svm.SVC(C=1.0, kernel='linear', degree=3, gamma='auto')
-    SVM.fit(Train_X_Tfidf,Train_Y)# predict the labels on validation dataset
-    predictions_SVM = SVM.predict(Test_X_Tfidf)# Use accuracy_score function to get the accuracy
-    print("SVM Accuracy Score -> ",accuracy_score(predictions_SVM, Test_Y)*100)
-    print(classification_report(Test_Y,predictions_SVM, labels=[0,1], target_names=['neg','pos']))
+    print("########################################################\n\n")
 
+    print("Chargement de bow fréquence")
+    time.sleep(3)
+    Naive.fit(bow_Trainf,Train_Y)# predict the labels on validation dataset
+    predictions_NB = Naive.predict(bow_Testf)# Use accuracy_score function to get the accuracy
+    # print(predictions_NB)
+    print("Naive Bayes Accuracy Score -> ",accuracy_score(predictions_NB, Test_Y)*100)
 
-
-
-
-def files2csv(text,out,label):
-    
-    
-    text = text.replace('\t',"")
-    text = text.replace('\n',"")
-    print(label)
-    out.write(text+'\t'+label+'\n')
-
-
-
-
-def getFile(fic,pol): 
-    x = 0
-    for f in glob(fic+'/*') : 
-        x += 1
-        if x >= 2000 : 
-            os.system(f'mv {f} /home/schaub/Téléchargements/aclImdb_v1/aclImdb/test/{pol}/')
-
-        if x == 8000 : 
-            break
-
-
-def getcontentlabel(file) :
-    
-    expect = '' 
-    if 'p/' in file : 
-        expect = 'pos'
-    else : 
-        expect = 'neg'
-
-    return open(file).read(),expect
-
-
-def prediction(file,expect) : 
-
-
-    pred = Predict(file, pw, nw, nlp)
-    pred.predict()
-    predicted.append(pred.predicted)
-    expected.append(expect)
+    print(classification_report(Test_Y,predictions_NB, labels=[0,1], target_names=['neg','pos']))
 
 
 if __name__ == '__main__':
 
-    out = open('../data/dataset1.csv',encoding='utf-8')
-    # out.write('text\tlabel\n')
-    pipeline(out)
-    # x = 0
-    # y = 0
-    # for fic in glob('/home/schaub/Téléchargements/aclImdb_v1/aclImdb/test/p/*.txt') : 
-    #     print(fic)
-    #     x += 1
-    #     file, label = getcontentlabel(fic)
-    #     files2csv(file,out,label)
-    #     if x == 100 : 
-    #         break
-    # for fic in glob('/home/schaub/Téléchargements/aclImdb_v1/aclImdb/test/n/*.txt') :
-    #     print(fic)
-    #     y += 1
-    #     file, label = getcontentlabel(fic)
-    #     files2csv(file,out,label)
-    #     if y == 1000 : 
-    #         break
+    out = '../data/mini_csv.csv'
 
 
-        # print(file)
-        # print(label)
+    pipeline(out, n_grammes = 1) # si je  ne précise rien, ce sera des bi-grammes. Ici je précise que je veux des unigrammes
 
-        # prediction(file,label)
-
-
-    # print(len(predicted))
-    # print(len(expected))
-
-    # eval = Evaluation(expected,predicted)
 
     
-    # print(eval.getVraisPos())
-    # print(eval.getFauxNeg())
-    # print(eval.getFauxPos())
-    # print(eval.f_mesure())
