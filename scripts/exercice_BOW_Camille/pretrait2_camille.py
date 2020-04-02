@@ -4,7 +4,7 @@ from glob import glob
 import os
 import random
 # from scripts.Evaluation import Evaluation
-from PredictBOW_cam_V3 import *
+from PredictBOW_cam_V4 import *
 #from Evaluation import Evaluation
 import spacy
 predicted = []
@@ -12,7 +12,6 @@ expected = []
 
 
 nlp=spacy.load('en_core_web_sm')
-# from Predict import Predict
 
 
 import pandas as pd
@@ -32,26 +31,16 @@ from sklearn.metrics import accuracy_score, classification_report
 def pipeline(fic):
     corpus=pd.read_csv(fic,sep='\t')
     corpus['text']=[elem.lower() for elem in corpus['text']]
-    return corpus
-    #print(corpus.head())
-    #Train_X, Test_X, Train_Y, Test_Y = model_selection.train_test_split(corpus['text'],corpus['label'],test_size=0.2)
-    #Encoder = LabelEncoder()
-    #Train_Y = Encoder.fit_transform(Train_Y)
+    Train_X, Test_X= model_selection.train_test_split(corpus,test_size=0.2)
 
-
+    return Train_X, Test_X
     #Test_Y = Encoder.fit_transform(Test_Y)
-    #print(Train_Y)
-    #print(Test_Y)
 
 def files2csv(text,out,label):
 
    texte_clean=re.sub(r'(<[^>]*>)|\(|\)|\n|\t',' ',text)
    with open(out, 'a') as file:
        file.write(texte_clean+"\t"+label+"\n")
-
-
-
-
 
 def getFile(fic,pol):
     x = 0
@@ -63,7 +52,6 @@ def getFile(fic,pol):
         if x == 8000 :
             break
 
-
 def getcontentlabel(file) :
 
     expect = ''
@@ -73,7 +61,6 @@ def getcontentlabel(file) :
         expect = 'neg'
 
     return open(file).read(),expect
-
 
 def prediction(file,expect) :
 
@@ -95,16 +82,26 @@ if __name__ == '__main__':
         #text,label=getcontentlabel(fic)
         #files2csv(text,"./csv_test.csv",label)
 
-    corpus=CorpusCSV(pipeline("./csv_test.csv"))
-    print(corpus.voc)
-    corpus.getBOW()
-    print(corpus.bow)
-    print(corpus.bigram)
-    print(corpus.trigram)
-    corpus.getTFIDF_voc()
-    print(corpus.tfidf_voc)
-    corpus.getTFIDF_bigram()
-    print(corpus.tfidf_bigram)
-    corpus.getTFIDF_trigram()
-    print(corpus.tfidf_trigram)
-    print("ca marche ! bravo")
+    corpusTrain,corpusTest=pipeline("./imdb_test.csv")
+    corpusTrain=CorpusCSV(corpusTrain)
+    corpusTest=CorpusCSV(corpusTest,corpusTrain.voc)
+
+    print(len(corpusTrain.voc.unigram))
+    print(len(corpusTest.voc.unigram))
+    print(len(corpusTrain.voc.bigram))
+    print(len(corpusTest.voc.bigram))
+    print(len(corpusTrain.voc.trigram))
+    print(len(corpusTest.voc.trigram))
+
+    #corpusTest.getBOW_unigram()
+    #print(corpusTest.bow_unigram)
+    #corpusTest.getBOW_bigram()
+    #print(corpusTest.bow_bigram)
+    #corpusTest.getBOW_trigram()
+    #print(corpusTest.bow_trigram)
+    #corpusTest.getTFIDF_unigram()
+    #print(corpusTest.tfidf_unigram)
+    #corpusTest.getTFIDF_bigram()
+    #print(corpusTest.tfidf_bigram)
+    #corpusTest.getTFIDF_trigram()
+    #print(corpusTest.tfidf_trigram)
